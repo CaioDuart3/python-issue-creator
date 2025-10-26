@@ -1,0 +1,7 @@
+# Dependências do Projeto de Automação de Issues no GitHub
+
+# Biblioteca para interagir com a API do GitHub (criação de issues)
+PyGithub==2.2.0
+
+# Biblioteca para carregar variáveis de ambiente do arquivo .env
+python-dotenv==1.0.1
