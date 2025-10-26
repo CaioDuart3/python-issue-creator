@@ -85,9 +85,9 @@ def create_github_issues_from_backlog():
         try:
             # Criação da issue propriamente dita
             new_issue = repo.create_issue(title=title, body=body)
-            print(f"✅ Issue {i+1}/{len(issues_to_create)} criada: '{title}' (URL: {new_issue.html_url})")
+            print(f"Issue {i+1}/{len(issues_to_create)} criada: '{title}' (URL: {new_issue.html_url})")
         except Exception as e:
-            print(f"❌ Erro ao criar a Issue '{title}'. Detalhes: {e}")
+            print(f"ERRO ao criar a Issue '{title}'. Detalhes: {e}")
 
 if __name__ == "__main__":
     create_github_issues_from_backlog()
