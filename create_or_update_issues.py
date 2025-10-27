@@ -1,7 +1,7 @@
 from github import Github
 from dotenv import load_dotenv
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 load_dotenv()
 
@@ -19,11 +19,11 @@ def get_or_create_milestone(repo, milestone_title, due_date=None):
     # Procurar milestone existente
     for ms in repo.get_milestones(state='open'):
         if ms.title == milestone_title:
-            # Atualizar data de vencimento se fornecida
             if due_date:
                 try:
-                    new_due = datetime.strptime(due_date, "%Y-%m-%d")
-                    if ms.due_on != new_due:
+                    new_due = datetime.strptime(due_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    # Comparar apenas a data
+                    if not ms.due_on or ms.due_on.date() != new_due.date():
                         ms.edit(title=ms.title, state=ms.state, due_on=new_due)
                         print(f"Milestone '{milestone_title}' atualizada com vencimento {due_date}.")
                 except ValueError:
@@ -34,7 +34,7 @@ def get_or_create_milestone(repo, milestone_title, due_date=None):
     due_on = None
     if due_date:
         try:
-            due_on = datetime.strptime(due_date, "%Y-%m-%d")
+            due_on = datetime.strptime(due_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
         except ValueError:
             print(f"Data de vencimento inválida para '{milestone_title}': {due_date}")
 
@@ -133,8 +133,13 @@ def sync_github_issues_from_backlog():
 
         if issue_found:
             try:
-                # Atualizar título, corpo, labels e milestone (pode ser None)
-                issue_found.edit(title=title, body=body, labels=labels, milestone=milestone)
+                # Atualizar título, corpo, labels e milestone
+                issue_found.edit(
+                    title=title,
+                    body=body or "",
+                    labels=[lbl for lbl in labels if lbl],
+                    milestone=milestone
+                )
                 # Reabrir se estiver fechada
                 if issue_found.state == 'closed':
                     issue_found.edit(state='open')
@@ -145,7 +150,14 @@ def sync_github_issues_from_backlog():
                 print(f"Erro ao editar issue '{title}': {e}")
         else:
             try:
-                new_issue = repo.create_issue(title=title, body=body, labels=labels, milestone=milestone)
+                # Criar kwargs dinamicamente para evitar passar None
+                issue_kwargs = {"title": title, "body": body or ""}
+                if labels and any(lbl.strip() for lbl in labels):
+                    issue_kwargs["labels"] = [lbl.strip() for lbl in labels if lbl.strip()]
+                if milestone:
+                    issue_kwargs["milestone"] = milestone
+
+                new_issue = repo.create_issue(**issue_kwargs)
                 print(f"Issue '{title}' criada: {new_issue.html_url}")
             except Exception as e:
                 print(f"Erro ao criar issue '{title}': {e}")
