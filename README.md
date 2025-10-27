@@ -2,11 +2,17 @@
 
 ## 📝 Descrição do Projeto
 
-Este projeto consiste em um script Python simples, mas poderoso, que automatiza a criação de Issues (tarefas) no GitHub a partir de um arquivo de texto estruturado (backlog.md).
+O script permite que você mantenha suas tarefas sempre atualizadas no GitHub a partir de um arquivo Markdown (backlog.md). Ele lê o arquivo de backlog e:
 
-Ele transforma cada título marcado com `##` no Markdown em um título de issue e utiliza o conteúdo subsequente até o separador `---` como descrição da issue.
+- Transforma cada título marcado com `##` em uma issue no GitHub.
+- Usa o conteúdo abaixo do título, até o separador ---, como descrição detalhada da issue.
+- Permite definir labels para cada issue diretamente no arquivo Markdown, usando uma linha que começa com `Labels`: seguida de uma lista separada por vírgulas.
+- Atualiza automaticamente uma issue existente se ela já estiver no repositório.
+- Cria novas issues quando necessário, evitando duplicatas.
 
-✨ Funcionalidades
+Com isso, você mantém seu backlog sincronizado, economiza tempo e evita erros manuais ao gerenciar tarefas.
+
+## ✨ Funcionalidades
 
 * **Extração Inteligente:** Lê e processa um arquivo backlog.md estruturado com títulos e descrições.
 

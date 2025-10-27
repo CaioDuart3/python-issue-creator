@@ -11,14 +11,14 @@ BACKLOG_FILE = os.getenv('BACKLOG_FILE')
 ISSUE_SEPARATOR = '---'
 DEFAULT_LABELS = []  # Labels padrão caso o bloco não especifique
 
-def create_github_issues_from_backlog():
+def sync_github_issues_from_backlog():
     if not GITHUB_TOKEN:
         print("Erro: GITHUB_TOKEN não configurado.")
         return
 
     print(f"Conectando ao GitHub para o repositório: {REPO_NAME}")
     g = Github(GITHUB_TOKEN)
-    
+
     try:
         repo = g.get_repo(REPO_NAME)
     except Exception as e:
@@ -34,7 +34,7 @@ def create_github_issues_from_backlog():
         return
 
     issue_blocks = content.strip().split(ISSUE_SEPARATOR)
-    issues_to_create = []
+    issues_to_process = []
 
     for block in issue_blocks:
         block = block.strip()
@@ -49,27 +49,39 @@ def create_github_issues_from_backlog():
             labels = [lbl.strip() for lbl in label_line.replace('Labels:', '').split(',')] if label_line else DEFAULT_LABELS
             # Corpo da issue
             body = '\n'.join([line for line in lines if line != title_line and line != label_line]).strip()
-            issues_to_create.append({'title': title, 'body': body, 'labels': labels})
+            issues_to_process.append({'title': title, 'body': body, 'labels': labels})
         else:
             print(f"Aviso: Bloco ignorado sem título: {block[:50]}...")
 
-    if not issues_to_create:
+    if not issues_to_process:
         print("Nenhuma issue válida encontrada.")
         return
 
-    print(f"{len(issues_to_create)} issues encontradas. Criando...")
+    print(f"{len(issues_to_process)} issues encontradas. Sincronizando...")
 
-    for i, issue_data in enumerate(issues_to_create):
+    # Buscar issues existentes no repositório
+    existing_issues = list(repo.get_issues(state='open'))
+
+    for issue_data in issues_to_process:
         title = issue_data['title']
         body = issue_data['body']
         labels = issue_data['labels']
 
-        try:
-            new_issue = repo.create_issue(title=title, body=body, labels=labels)
-            print(f"Issue '{title}' criada: {new_issue.html_url}")
-        except Exception as e:
-            print(f"Erro ao criar issue '{title}': {e}")
+        # Procurar issue existente pelo título
+        issue_found = next((i for i in existing_issues if i.title == title), None)
 
+        if issue_found:
+            try:
+                issue_found.edit(title=title, body=body, labels=labels)
+                print(f"Issue '{title}' atualizada: {issue_found.html_url}")
+            except Exception as e:
+                print(f"Erro ao editar issue '{title}': {e}")
+        else:
+            try:
+                new_issue = repo.create_issue(title=title, body=body, labels=labels)
+                print(f"Issue '{title}' criada: {new_issue.html_url}")
+            except Exception as e:
+                print(f"Erro ao criar issue '{title}': {e}")
 
 if __name__ == "__main__":
-    create_github_issues_from_backlog()
+    sync_github_issues_from_backlog()
